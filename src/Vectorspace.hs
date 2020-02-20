@@ -22,7 +22,7 @@ matmult m n
     | length m /= length (m!!0) = matmult (sqrify m) n
     | length n /= length (n!!0) = matmult m (sqrify n)
     | otherwise                 = [[
-                                        sum (zipWith (*) (getRowMat m y) (getColMat n x))
+                                        sum (zipWith (*) (getColMat m y) (getRowMat n x))
                                     | x<-[0..((length (m!!y))-1)] ]
                                 | y<-[0..((length m)-1)]]
 
@@ -117,28 +117,28 @@ getRowMat m r = [ m!!r!!x | x <- [0..((length (m!!0))-1)]]
 getColMat :: Num a => [[a]] -> Int -> [a]
 getColMat m c = [ m!!x!!c | x <- [0..((length m)-1)]]
 
--- TODO row and col are mixed up here ?
 -- return the matrix with collumn c removed
-elimColMat :: Num a => [[a]] -> Int -> [[a]]
-elimColMat m r = map (\i -> take r i ++ drop (r+1) i) m
+elimRowMat :: Num a => [[a]] -> Int -> [[a]]
+elimRowMat m r = map (\i -> take r i ++ drop (r+1) i) m
 
 -- returns the matrix with row r removed
-elimRowMat :: Num a => [[a]] -> Int -> [[a]]
-elimRowMat m c = take c m ++ drop (c+1) m
+elimColMat :: Num a => [[a]] -> Int -> [[a]]
+elimColMat m c = take c m ++ drop (c+1) m
 
 -- eliminates row y and collumn x
 elimRowColMat :: (Num a) => [[a]] -> Int -> Int -> [[a]]
-elimRowColMat m x y = elimColMat (elimRowMat m y) x
+elimRowColMat m x y = elimRowMat (elimColMat m y) x
 
+-- takes a matrix and replaces the n th collumn with a vector
 replCol :: Num a => [[a]] -> Int -> [a] -> [[a]]
 replCol m i v = map (\y -> map (\x -> if(x==i && y<length v)then(v!!y)else(m!!y!!x)) [0..((length (m!!0))-1)]) [0..((length m)-1)]
 
+-- takes a matrix and replaces the n th row with a vector
 replRow :: Num a => [[a]] -> Int -> [a] -> [[a]]
 replRow m i v = map (\y -> map (\x -> if(y==i && x<length v)then(v!!x)else(m!!y!!x)) [0..((length (m!!0))-1)]) [0..((length m)-1)]
 
-det :: Num a => [[a]] -> a
-
 -- calculates the determinant of a matrix
+det :: Num a => [[a]] -> a
 det m = case (length m, length (m!!0)) of
     (1,1) -> m!!0!!0
     (p,q) -> do
@@ -150,7 +150,7 @@ det m = case (length m, length (m!!0)) of
 minor :: Num a => [[a]] -> Int -> Int -> a
 minor m x y = det (elimRowColMat m x y)
 
--- cofactor matrix / i.e. the replace each entry with their minor and apply the checkerboard pattern of (1) and (-1)
+-- cofactor matrix / i.e. replace each entry with their minor and apply the checkerboard pattern of (1) and (-1)
 cof :: Num a => [[a]] -> [[a]]
 cof m = [
         [
@@ -175,20 +175,20 @@ remDupl a
     | not (elem (a!!0) (drop 1 a)) = (a!!0):(remDupl(drop 1 a))
     | otherwise = remDupl (drop 1 a)
 
+-- true if list a and list b are linearily dependent
 linDep :: (Fractional a, Eq a, Enum a) => [a] -> [a] -> Bool
 linDep a b
-        | length a > length b   = linDep a (zipWith (+) a (b++(take (length a - length b) [0,0..])) )
-        | length a < length b   = linDep b a
-        | b!!0==0 && a!!0==0    = linDep (drop 1 a) (drop 1 b)
-        | b!!0==0               = linDep a (zipWith (+) a b)
-        | a!!0==0               = linDep (zipWith (+) a b) b
-        | otherwise             = sum (zipWith (-) a [ x * ((a!!0)/(b!!0)) | x<-b ]) == 0
+    | length a < length b   = linDep b a
+    | length a == 0         = True
+    | a!!0==b!!0 && a!!0==0  = linDep (tail a) (tail b)
+    | a!!0/=0 && b!!0/=0    = all (\e -> (fst e)/b!!0 == (snd e)/a!!0) $ zip a (b++[0,0..])
+    | otherwise             = False
 
 -- adds a collumn of 0 at the beginning
 addCol :: Num a => [[a]] -> [[a]]
 addCol m = map (\e -> 0:e) m
 
--- reduced row-echelon form
+-- reduced row-echelon form (TODO)
 rref :: (Fractional a, Eq a) => [[a]] -> [[a]]
 rref m = rref_step 0 m
 
@@ -199,9 +199,9 @@ rref_step s m
     | s+1 < length m                            = rref_step (s+1) (elim s)
     | otherwise                                 = normalize s
     where
-        coef s          = length ( filter (\i-> i/=0) (getColMat m s) )
-        ones s          = length ( filter (\i-> i==1) (getColMat m s) )
-        emptyUntil s r  = 0 == length ( filter (\i-> i/=0) (take s (getRowMat m r)))
+        coef s          = length ( filter (\i-> i/=0) (getRowMat m s) )
+        ones s          = length ( filter (\i-> i==1) (getRowMat m s) )
+        emptyUntil s r  = 0 == length ( filter (\i-> i/=0) (take s (getColMat m r)))
         normalize s     = map (\y-> if(m!!y!!s /= 0 && emptyUntil s y)then(map (/m!!y!!s) (m!!y))else(m!!y) ) [0..((length m)-1)]
         newPivot n s    = (take 1 (filter (\y-> (emptyUntil s y) && (n!!y!!s==1)) [0..((length n)-1)]))
         elim s          = do
@@ -281,9 +281,9 @@ hermit :: RealFloat a => [[Complex a]] -> Bool
 hermit m = adjo m == m
 
 unitar :: RealFloat a => [[Complex a]] -> Bool
-unitar m =adjo m == fromMaybe [[0]] (inv m)
+unitar m = adjo m == fromMaybe [[0]] (inv m)
 
---kroneck :: Num a => [[a]] -> [[a]] -> [[a]]
+kroneck :: Num a => [[a]] -> [[a]] -> [[a]]
 kroneck m n = [
             [ (m!!( yPosM y )!!( xPosM x )) * (n!!( yPosN y )!!( xPosN x ))
         | x<-[0..((length (m!!0))*(length (n!!0))-1)]]
@@ -293,11 +293,3 @@ kroneck m n = [
         xPosM x = x `mod` (length (m!!0))
         yPosN y = if (y==0)then(0)else( y `div` (length m) )
         xPosN x = if (x==0)then(0)else( x `div` (length (m!!0)) )
-
-repeatedkroneck :: Num a => [[a]] -> Int -> [[a]]
-repeatedkroneck m n
-    | n == 1 = m
-    | n >  1 = kroneck (repeatedkroneck m (n-1)) m
-
-sirpinski :: Int -> [[Int]]
-sirpinski n = repeatedkroneck [[1,0],[1,1]] n

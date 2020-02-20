@@ -1,3 +1,3 @@
 A linear algebra library which provides
-most functions tought in Linear Algebra
+most functions taught in Linear Algebra
 I and II.
