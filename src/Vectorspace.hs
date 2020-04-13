@@ -9,29 +9,30 @@ vecadd a b = map ( \i -> (a!!i) + (b!!i) ) [0..length a-1]
 
 -- multiplies a vector by a scalar
 vecmul :: Integer -> [Integer] -> [Integer]
-vecmul a b = map (*a) b
+vecmul a = map (*a)
 
 -- multiplies a matrix by a scalar
 matscalmult :: Num a => [[a]] -> a -> [[a]]
-matscalmult m s = map (\y -> map (\x -> (m!!y!!x)*s) [0..(length (m!!y))-1]) [0..(length m)-1]
+matscalmult m s = map (\y -> map (\x -> (m!!y!!x)*s) [0..length (m!!y)-1]) [0..length m-1]
 
 -- multiplies / composes two matrices
 matmult :: Num a => [[a]] -> [[a]] -> [[a]]
 matmult m n
-    | length m > length n       = matmult m (scale n (length m))
-    | length m /= length (m!!0) = matmult (sqrify m) n
-    | length n /= length (n!!0) = matmult m (sqrify n)
-    | otherwise                 = [[
-                                        sum (zipWith (*) (getColMat m y) (getRowMat n x))
-                                    | x<-[0..((length (m!!y))-1)] ]
-                                | y<-[0..((length m)-1)]]
+    | length m > length n         = matmult m (scale n (length m))
+    | length m /= length (head m) = matmult (sqrify m) n
+    | length n /= length (head n) = matmult m (sqrify n)
+    | otherwise                   = [[
+                                          sum (zipWith (*) (getColMat m y) (getRowMat n x))
+                                      | x<-[0..(length (m!!y)-1)] ]
+                                  | y<-[0..(length m-1)]]
 
 -- multiplies a matrix by a vector / applies a matrix to a vector
 matvecmult :: Num a => [[a]] -> [a] -> [a]
-matvecmult m v = map (\e-> head e) $ matmult m (map (\e-> [e]) v)
+matvecmult m v = map head $ matmult m (map (\e-> [e]) v)
 
 applyMatrix :: Num a => [[a]] -> [a] -> [a]
-applyMatrix m v = map (\s -> sum (zipWith (*) v s)) m
+applyMatrix m v = map (sum . zipWith (*) v) m
+
 
 -- adds two matrices together
 matadd :: Num a => [[a]] -> [[a]] -> [[a]]
@@ -46,15 +47,15 @@ matadd m n
 
 -- subtracts one matrix from another
 matsub :: Num a => [[a]] -> [[a]] -> [[a]]
-matsub m n = matadd (m) (matscalmult n (-1))
+matsub m n = matadd m (matscalmult n (-1))
 
 -- creates an identity matrix of dimension n
 matid :: Num a => Int -> [[a]]
-matid n = matgen n (\i -> (\j -> if(i==j)then(1)else(0)))
+matid n = matgen n (\ i j -> if i==j then 1 else 0 )
 
 -- maps a matrices entries based on a function that takes the indices as input
 matmap :: Num a => [[a]] -> ( Int -> Int -> a -> a ) -> [[a]]
-matmap m f = map (\y -> map (\x -> f y x (m!!y!!x) ) [0..((length (m!!y))-1)]) [0..((length m)-1)]
+matmap m f = map (\y -> map (\x -> f y x (m!!y!!x) ) [0..(length (m!!y)-1)]) [0..( length m -1)]
 
 -- complex conjugat of a matrix
 matcon :: RealFloat a => [[Complex a]] -> [[Complex a]]
@@ -69,7 +70,7 @@ matgen s f = [[
 
 -- fills in entries with 0's, so that a matrix is square
 sqrify :: Num a => [[a]] -> [[a]]
-sqrify m = scale m (max (length m) (length (m!!0)))
+sqrify m = scale m (max (length m) (length (head m)))
 
 -- scales a matrix m to a size s (also makes it a square matrix
 scale :: Num a => [[a]] -> Int -> [[a]]
