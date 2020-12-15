@@ -1,0 +1,50 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.33.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: c4b15d185ce8e31988a5f9e8a88132bbd913f6e6629f520bc827952abdec467e
+
+name:           Vectorspace
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/quoteme/Vectorspace#readme>
+homepage:       https://github.com/quoteme/Vectorspace#readme
+bug-reports:    https://github.com/quoteme/Vectorspace/issues
+author:         Luca Leon Happel
+maintainer:     example@example.com
+copyright:      2019 Luca Leon Happel
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/quoteme/Vectorspace
+
+library
+  exposed-modules:
+      Vectorspace
+  other-modules:
+      Paths_Vectorspace
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.7 && <5
+  default-language: Haskell2010
+
+test-suite Vectorspace-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_Vectorspace
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      Vectorspace
+    , base >=4.7 && <5
+  default-language: Haskell2010
