@@ -3,9 +3,44 @@ module Vectorspace where
 import Data.Complex
 import Data.Maybe
 
--- adds a vector to another vector
-vecadd :: Num a => [a] -> [a] -> [a]
-vecadd a b = map ( \i -> (a!!i) + (b!!i) ) [0..length a-1]
+newtype Vector a = Vector [a] deriving (Eq)
+newtype Matrix a = Matrix [[a]] deriving (Eq)
+
+instance Show a => Show (Vector a) where
+        show (Vector v)
+            | length v == 0 = "()"
+            | length v == 1 = "(" ++ show (v!!0) ++ ")"
+            | length v == 2 = start v ++ end v
+            | length v >= 3 = start v ++ center v ++ end v where
+                start v = vectortop $ (show.head) v
+                center v = concatMap (vectorcenter.show) ( (init.tail) v)
+                end   v = vectorbottom $ (show.last) v
+                vectortop x = "/" ++ x ++ "\\\n"
+                vectorcenter x = "|" ++ x ++ "|\n"
+                vectorbottom x = "\\" ++ x ++ "/"
+
+instance Show a => Show (Matrix a) where
+        show (Matrix m) = start m ++ "\n" ++ center m ++ "\n" ++ end m where
+            start m  = (matrixtop.concat) [ cell v | v <- head m ]
+            center m = (matrixcenter.concat) [ cell v | v <- (head.init.tail) m ]
+            end   m  = (matrixbottom.concat) [ cell v | v <- last m ]
+            matrixtop v    = "┌" ++ v ++ "┐"
+            matrixcenter v = "│" ++ v ++ "│"
+            matrixbottom v = "└" ++ v ++ "┘"
+            cell v = [ if i< length (show v) then (show v)!!i else ' ' | i <- [0..cellWidth] ]
+            cellWidth =  maximum $ map (length.show) $ concat m
+
+instance Floating a => Num (Vector a) where
+        -- componentwise addition
+        (Vector v) + (Vector w)
+                            | length v == length w = Vector $ zipWith (+) v w
+                            | length v >  length w = Vector v + Vector (take (length v) (w++repeat 0))
+                            | length v <  length w = Vector w + Vector v
+        (Vector v) * (Vector w) = Vector $ zipWith (*) v w
+        negate (Vector v) = Vector $ map (*(-1)) v
+        abs (Vector v) = Vector [sqrt $ sum (map (**2) v)]
+        signum (Vector v) = Vector $ map signum v
+        fromInteger n = Vector [fromInteger n]
 
 -- multiplies a vector by a scalar
 vecmul :: Integer -> [Integer] -> [Integer]
